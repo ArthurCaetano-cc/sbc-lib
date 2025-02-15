@@ -1,148 +1,102 @@
 #include <iostream>
 #include <vector>
 #include <queue>
-#include <stack>
-#include <unordered_map>
 
 using namespace std;
 
-class Graph {
-private:
-    int n; // Number of vertices
-    vector<vector<int>> adjMatrix; // Adjacency matrix
-    unordered_map<char, int> vertexToIndex; // Mapping from vertex labels to indices
-    unordered_map<int, char> indexToVertex; // Mapping from indices to vertex labels
-    int indexCounter = 0;
+// DFS:
 
-    // Helper function to get index for a vertex, creating if it doesn't exist
-    int getIndex(char vertex) {
-        if (vertexToIndex.find(vertex) == vertexToIndex.end()) {
-            vertexToIndex[vertex] = indexCounter;
-            indexToVertex[indexCounter] = vertex;
-            indexCounter++;
-            // Resize the matrix if needed
-            adjMatrix.resize(indexCounter, vector<int>(indexCounter, 0));
-        }
-        return vertexToIndex[vertex];
-    }
+// A helper (recursive) function that visits nodes reachable from `vertex`.
+void DFSUtil(const vector<vector<int>>& adjMatrix, int vertex, vector<bool>& visited)
+{
+    // Mark the current vertex as visited
+    visited[vertex] = true;
+    cout << vertex << " ";
 
-public:
-    // Constructor
-    Graph(int V) {
-        n = V;
-        adjMatrix.resize(V, vector<int>(V, 0));
-    }
-
-    // Function to add an edge (undirected graph)
-    void addEdge(char v, char w) {
-        int i = getIndex(v);
-        int j = getIndex(w);
-        adjMatrix[i][j] = 1;
-        adjMatrix[j][i] = 1; // Remove this line if working with directed graphs
-    }
-
-    // Function to print the adjacency matrix
-    void printGraph() {
-        cout << "  ";
-        for (int i = 0; i < indexCounter; i++) {
-            cout << indexToVertex[i] << " ";
-        }
-        cout << endl;
-
-        for (int i = 0; i < indexCounter; i++) {
-            cout << indexToVertex[i] << " ";
-            for (int j = 0; j < indexCounter; j++) {
-                cout << adjMatrix[i][j] << " ";
-            }
-            cout << endl;
+    // For every adjacent vertex to 'vertex', visit if not visited
+    for (int i = 0; i < (int)adjMatrix.size(); i++)
+    {
+        // If there is an edge from 'vertex' to 'i' and 'i' is not visited
+        // (We check `adjMatrix[vertex][i] != 0` to see if an edge exists.)
+        if (adjMatrix[vertex][i] != 0 && !visited[i])
+        {
+            DFSUtil(adjMatrix, i, visited);
         }
     }
+}
 
-    void dfs(char start) {
-        unordered_map<int, bool> visited;
-        stack<int> s;
-        int startIndex = getIndex(start);
+// Depth-First Search (entry point)
+void DFS(const vector<vector<int>>& adjMatrix, int start)
+{
+    int n = (int)adjMatrix.size();
+    vector<bool> visited(n, false);
 
-        s.push(startIndex);
-        visited[startIndex] = true;
+    // Call the recursive helper function
+    DFSUtil(adjMatrix, start, visited);
+    cout << endl;
+}
 
-        while (!s.empty()) {
-            int v = s.top();
-            s.pop();
-            cout << "Visited " << indexToVertex[v] << endl;
+// BFS:
 
-            for (int w = 0; w < indexCounter; w++) {
-                if (adjMatrix[v][w] && !visited[w]) {
-                    cout << indexToVertex[v] << " -> " << indexToVertex[w] << endl;
-                    s.push(w);
-                    visited[w] = true;
-                }
+void BFS(const vector<vector<int>>& adjMatrix, int start)
+{
+    int n = (int)adjMatrix.size();
+    vector<bool> visited(n, false);
+    queue<int> q;
+
+    // Mark the start vertex as visited and enqueue it
+    visited[start] = true;
+    q.push(start);
+
+    while (!q.empty())
+    {
+        int current = q.front();
+        q.pop();
+        cout << current << " ";
+
+        // Enqueue all adjacent vertices not yet visited
+        for (int i = 0; i < n; i++)
+        {
+            // If there is an edge from 'current' to 'i' and 'i' is not visited
+            if (adjMatrix[current][i] != 0 && !visited[i])
+            {
+                visited[i] = true;
+                q.push(i);
             }
         }
     }
+    cout << endl;
+}
 
-    void bfs(char start) {
-        unordered_map<int, bool> visited;
-        queue<int> q;
-        int startIndex = getIndex(start);
+// -------------------- MAIN FUNCTION (Example Usage) --------------------
 
-        q.push(startIndex);
-        visited[startIndex] = true;
+int main()
+{
+    int N;
+    cout << "Enter the number of vertices: ";
+    cin >> N;
 
-        while (!q.empty()) {
-            int v = q.front();
-            q.pop();
-            cout << "Visited " << indexToVertex[v] << endl;
+    // Initialize an NxN adjacency matrix
+    vector<vector<int>> adjMatrix(N, vector<int>(N, 0));
 
-            for (int w = 0; w < indexCounter; w++) {
-                if (adjMatrix[v][w] && !visited[w]) {
-                    cout << indexToVertex[v] << " -> " << indexToVertex[w] << endl;
-                    q.push(w);
-                    visited[w] = true;
-                }
-            }
+    cout << "Enter the adjacency matrix (row by row):\n";
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            cin >> adjMatrix[i][j];
         }
     }
 
-    // Handle disconnected graphs
-    void dfsAll() {
-        unordered_map<int, bool> visited;
-        for (int i = 0; i < indexCounter; i++) {
-            if (!visited[i]) {
-                dfs(indexToVertex[i]);
-            }
-        }
-    }
+    int start;
+    cout << "Enter the starting vertex for DFS/BFS: ";
+    cin >> start;
 
-    void bfsAll() {
-        unordered_map<int, bool> visited;
-        for (int i = 0; i < indexCounter; i++) {
-            if (!visited[i]) {
-                bfs(indexToVertex[i]);
-            }
-        }
-    }
-};
+    cout << "DFS traversal starting from vertex " << start << ": ";
+    DFS(adjMatrix, start);
 
-int main() {
-    Graph g(9);
-    g.addEdge('A', 'G');
-    g.addEdge('A', 'B');
-    g.addEdge('B', 'C');
-    g.addEdge('B', 'D');
-    g.addEdge('B', 'E');
-    g.addEdge('E', 'F');
-    g.addEdge('G', 'H');
-    g.addEdge('H', 'I');
-
-    cout << "Adjacency Matrix:" << endl;
-    g.printGraph();
-
-    cout << "\nDFS (all components):" << endl;
-    g.dfsAll();
-
-    cout << "\nBFS (all components):" << endl;
-    g.bfsAll();
+    cout << "BFS traversal starting from vertex " << start << ": ";
+    BFS(adjMatrix, start);
 
     return 0;
 }
